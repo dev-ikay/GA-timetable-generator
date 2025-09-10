@@ -5,7 +5,6 @@
   <title>Automated Timetable Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-  <script src="data.js"></script>
   <script src="timetableGA.js"></script>
   <script src="app.js"></script>
   <style>
@@ -13,13 +12,55 @@
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
-    button { margin-right: 10px; padding: 8px 12px; }
+    button { margin-top: 10px; padding: 8px 12px; }
+    .section { margin-bottom: 20px; }
   </style>
 </head>
 <body>
   <h1>Automated Timetable Generator</h1>
-  <button onclick="generate()">Generate Timetable</button>
+
+  <!-- Courses -->
+  <div class="section">
+    <h3>Courses</h3>
+    <div id="courseInputs">
+      <input type="text" placeholder="Course ID (e.g. CS101)">
+      <input type="text" placeholder="Lecturer ID (e.g. L1)">
+      <input type="number" placeholder="Class Size">
+    </div>
+    <button onclick="addCourse()">Add Another Course</button>
+  </div>
+
+  <!-- Rooms -->
+  <div class="section">
+    <h3>Rooms</h3>
+    <div id="roomInputs">
+      <input type="text" placeholder="Room ID (e.g. R1)">
+      <input type="number" placeholder="Capacity">
+    </div>
+    <button onclick="addRoom()">Add Another Room</button>
+  </div>
+
+  <!-- Lecturers -->
+  <div class="section">
+    <h3>Lecturers</h3>
+    <div id="lecturerInputs">
+      <input type="text" placeholder="Lecturer ID (e.g. L1)">
+      <input type="text" placeholder="Unavailable Times (comma-separated, e.g. Mon-8,Tue-10)">
+    </div>
+    <button onclick="addLecturer()">Add Another Lecturer</button>
+  </div>
+
+  <!-- Timeslots -->
+  <div class="section">
+    <h3>Timeslots</h3>
+    <textarea id="timeslotInput" rows="3" cols="60" placeholder="Enter timeslots, e.g. Mon-8,Mon-10,Tue-8,Tue-10"></textarea>
+  </div>
+
+  <!-- Buttons -->
+  <button onclick="prepareData()">Save Data & Generate Timetable</button>
   <button onclick="downloadPDF()">Download as PDF</button>
+
+  <!-- Output -->
   <div id="timetable"></div>
 </body>
 </html>
