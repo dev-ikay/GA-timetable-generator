@@ -1,66 +1,105 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Automated Timetable Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-  <script src="timetableGA.js"></script>
-  <script src="app.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f4f4f4; }
-    button { margin-top: 10px; padding: 8px 12px; }
-    .section { margin-bottom: 20px; }
-  </style>
+<meta charset="utf-8"/>
+<title>GA Timetable Generator - Departmental</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:16px}
+h1{font-size:20px}
+.section{border:1px solid #ddd;padding:12px;margin-bottom:12px;border-radius:6px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text], input[type=number], select, textarea{padding:6px;border:1px solid #ccc;border-radius:4px;width:220px}
+label{font-weight:600;margin-right:6px}
+button{padding:8px 10px;border-radius:6px;border:none;background:#1f6feb;color:white;cursor:pointer}
+small{color:#666}
+.table-wrap{overflow:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ccc;padding:6px;text-align:left;font-size:13px}
+</style>
 </head>
 <body>
-  <h1>Automated Timetable Generator</h1>
+<h1>GA Timetable Generator — Departmental</h1>
 
-  <!-- Courses -->
-  <div class="section">
-    <h3>Courses</h3>
-    <div id="courseInputs">
-      <input type="text" placeholder="Course ID (e.g. CS101)">
-      <input type="text" placeholder="Lecturer ID (e.g. L1)">
-      <input type="number" placeholder="Class Size">
-    </div>
-    <button onclick="addCourse()">Add Another Course</button>
+<div class="section">
+  <h2>1. Lecturer Input</h2>
+  <div id="lecturerForm" class="row">
+    <input placeholder="Lecturer ID (e.g. L001)" id="lec-id-0" />
+    <input placeholder="Lecturer Name (e.g. John Doe)" id="lec-name-0" />
+    <select id="lec-title-0">
+      <option>Mr</option><option>Miss</option><option>Mrs</option><option>Dr</option><option>Prof</option><option>Other</option>
+    </select>
+    <input placeholder="If Other, enter title" id="lec-custom-0" style="display:none" />
+    <input placeholder="Unavailable times (comma sep e.g. Mon-8,Tue-10)" id="lec-unavail-0" />
   </div>
-
-  <!-- Rooms -->
-  <div class="section">
-    <h3>Rooms</h3>
-    <div id="roomInputs">
-      <input type="text" placeholder="Room ID (e.g. R1)">
-      <input type="number" placeholder="Capacity">
-    </div>
-    <button onclick="addRoom()">Add Another Room</button>
+  <div style="margin-top:8px">
+    <button onclick="addLecturer()">Add Lecturer</button>
+    <button onclick="saveLecturers()">Save All Lecturers</button>
+    <small> (Lecturer ID is used internally; outputs will show lecturer name.)</small>
   </div>
+  <div id="lecturerCount"></div>
+</div>
 
-  <!-- Lecturers -->
-  <div class="section">
-    <h3>Lecturers</h3>
-    <div id="lecturerInputs">
-      <input type="text" placeholder="Lecturer ID (e.g. L1)">
-      <input type="text" placeholder="Unavailable Times (comma-separated, e.g. Mon-8,Tue-10)">
-    </div>
-    <button onclick="addLecturer()">Add Another Lecturer</button>
+<div class="section">
+  <h2>2. Course Allocation</h2>
+  <div id="courseForm" class="row">
+    <input placeholder="Course Code (optional)" id="course-code-0" />
+    <input placeholder="Course Name" id="course-name-0" />
+    <input type="number" placeholder="Class Size" id="course-size-0" />
+    <input placeholder="Lecturer ID (e.g. L001)" id="course-lec-0" />
   </div>
-
-  <!-- Timeslots -->
-  <div class="section">
-    <h3>Timeslots</h3>
-    <textarea id="timeslotInput" rows="3" cols="60" placeholder="Enter timeslots, e.g. Mon-8,Mon-10,Tue-8,Tue-10"></textarea>
+  <div style="margin-top:8px">
+    <button onclick="addCourse()">Add Course</button>
+    <button onclick="createCourseAllocationTable()">Create Course Allocation Table</button>
+    <button onclick="continueToTimetable()">Continue to Timetable</button>
   </div>
+  <div id="courseTableWrap" class="table-wrap"></div>
+</div>
 
-  <!-- Buttons -->
-  <button onclick="prepareData()">Save Data & Generate Timetable</button>
-  <button onclick="downloadPDF()">Download as PDF</button>
+<div class="section">
+  <h2>3. Rooms</h2>
+  <div id="roomForm" class="row">
+    <input placeholder="Room Name (e.g. R101)" id="room-name-0" />
+    <input type="number" placeholder="Capacity" id="room-cap-0" />
+  </div>
+  <div style="margin-top:8px">
+    <button onclick="addRoom()">Add Room</button>
+    <button onclick="saveRooms()">Save Rooms</button>
+  </div>
+  <div id="roomCount"></div>
+</div>
 
-  <!-- Output -->
-  <div id="timetable"></div>
+<div class="section">
+  <h2>4. Timeslots (select days, then add slots per day)</h2>
+  <div class="row" id="daysRow">
+    <label><input type="checkbox" value="Mon" id="day-Mon"> Mon</label>
+    <label><input type="checkbox" value="Tue" id="day-Tue"> Tue</label>
+    <label><input type="checkbox" value="Wed" id="day-Wed"> Wed</label>
+    <label><input type="checkbox" value="Thu" id="day-Thu"> Thu</label>
+    <label><input type="checkbox" value="Fri" id="day-Fri"> Fri</label>
+  </div>
+  <div style="margin-top:8px">
+    <button onclick="enableDaySlots()">Define Slots for Selected Days</button>
+  </div>
+  <div id="timeslotDefs"></div>
+  <div id="timeslotCount"></div>
+</div>
+
+<div class="section" id="genSection" style="display:none">
+  <h2>5. Generate Timetable</h2>
+  <div>
+    <label>Population Size: <input type="number" id="popSize" value="200" /></label>
+    <label>Generations: <input type="number" id="generations" value="400" /></label>
+  </div>
+  <div style="margin-top:8px">
+    <button onclick="generateTimetable()">Generate Timetable (GA)</button>
+    <button onclick="downloadTimetablePDF()">Download Timetable PDF</button>
+  </div>
+  <div id="timetableWrap" class="table-wrap"></div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
