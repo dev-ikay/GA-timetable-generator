@@ -10,6 +10,7 @@ small{color:#6b7280}
 .table-wrap{overflow:auto;margin-top:12px}
 table{border-collapse:collapse;width:100%;background:white}
 th,td{border:1px solid #eef2f7;padding:8px;text-align:left;font-size:13px}
-.list-table{width:100%;border-collapse:collapse;margin-top:10px}
-.list-table th{background:#f1f5f9}
-.list-table th, .list-table td{padding:6px;border:1px solid #ddd;font-size:13px}
+#timetableTable th{background:#f1f5f9}
+#savedTimeslotList table td button, #constraintList table td button{padding:6px 8px;border-radius:6px;background:#e11d48;border:none;color:white;cursor:pointer}
+#constraintList table td{max-width:520px;word-wrap:break-word}
+@media (max-width:800px){ input[type=text], input[type=number], select{width:100%} }
