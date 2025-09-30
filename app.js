@@ -1,10 +1,11 @@
-// app.js - Departmental GA Timetable Generator (client-side)
+// app.js - Departmental GA Timetable Generator (client-side) - Patched for constraints and removable timeslots
 let lecturers = []; // {id,name,title,unavailable:[]}
 let courses = []; // {code,name,size,lecturerId}
 let rooms = []; // {id,capacity}
-let timeslots = []; // [{id:"Mon-08:00-10:00"}]
+let timeslots = []; // [{id:"Mon-08:00-10:00", day:"Mon", slot:"08:00-10:00"}]
 let daysSelected = [];
 let slotInputs = {};
+let constraints = []; // array of {id, text}
 
 // dynamic add functions
 function addLecturer(){
@@ -52,6 +53,7 @@ function saveLecturers(){
   }
   document.getElementById('lecturerCount').innerText = `Saved ${lecturers.length} lecturer(s).`;
   console.log('lecturers',lecturers);
+  toggleGenerateSection();
 }
 
 function addCourse(){
@@ -83,7 +85,7 @@ function createCourseAllocationTable(){
   }
   // build table mapping lecturerId to name
   const wrap = document.getElementById('courseTableWrap');
-  if(courses.length===0){ wrap.innerHTML='<p>No courses entered.</p>'; return; }
+  if(courses.length===0){ wrap.innerHTML='<p>No courses entered.</p>'; toggleGenerateSection(); return; }
   let html = '<table id="courseAllocTable"><thead><tr><th>Course Code</th><th>Course Title</th><th>Lecturer Name</th></tr></thead><tbody>';
   courses.forEach(c=>{
     const lec = lecturers.find(l=>l.id===c.lecturerId);
@@ -143,12 +145,22 @@ function enableDaySlots(){
   slotInputs = {};
   daysSelected.forEach(d=>{
     const div = document.createElement('div');
-    div.innerHTML = `<h4>${d}</h4><div id="slots-${d}" class="row"><input placeholder="e.g. 08:00-10:00" id="slot-${d}-0" /></div><button onclick="addSlotInput('${d}')">Add slot for ${d}</button>`;
+    div.id = `dayDef-${d}`;
+    div.innerHTML = `<h4>${d}</h4>
+      <div id="slots-${d}" class="row slot-row">
+        <input placeholder="e.g. 08:00-10:00" id="slot-${d}-0" />
+      </div>
+      <div style="margin-top:6px">
+        <button type="button" onclick="addSlotInput('${d}')">Add slot for ${d}</button>
+        <button type="button" onclick="saveTimeslotsForDay('${d}')">Save slots for ${d}</button>
+      </div>`;
     container.appendChild(div);
     slotInputs[d] = [];
     attachSlotInputListener(d,0);
   });
-  container.innerHTML += '<div style="margin-top:8px"><button onclick="saveTimeslots()">Save Timeslots</button></div>';
+  container.innerHTML += '<div style="margin-top:8px"><button onclick="saveAllTimeslots()">Save All Timeslots</button></div>';
+  // clear saved timeslot list display
+  renderSavedTimeslotList();
 }
 
 function addSlotInput(day){
@@ -166,23 +178,104 @@ function attachSlotInputListener(day,idx){
   el.addEventListener('change', ()=>{});
 }
 
-function saveTimeslots(){
-  timeslots = [];
+// Save slots for a single day (useful to quickly persist)
+function saveTimeslotsForDay(day){
+  const inputs = document.querySelectorAll(`#slots-${day} input`);
+  let added = 0;
+  inputs.forEach(inp=>{
+    const txt = inp.value.trim();
+    if(txt){
+      const id = `${day}-${txt}`;
+      // avoid duplicates
+      if(!timeslots.find(t=>t.id===id)){
+        timeslots.push({id:id, day:day, slot:txt});
+        added++;
+      }
+    }
+  });
+  document.getElementById('timeslotCount').innerText = `Saved ${timeslots.length} timeslot(s).`;
+  renderSavedTimeslotList();
+  toggleGenerateSection();
+}
+
+// Save all selected day slots at once
+function saveAllTimeslots(){
+  timeslots = timeslots || [];
   daysSelected.forEach(d=>{
     const inputs = document.querySelectorAll(`#slots-${d} input`);
     inputs.forEach(inp=>{
       const txt = inp.value.trim();
-      if(txt) timeslots.push({id:`${d}-${txt}`, day:d, slot:txt});
+      if(txt){
+        const id = `${d}-${txt}`;
+        if(!timeslots.find(t=>t.id===id)){
+          timeslots.push({id:id, day:d, slot:txt});
+        }
+      }
     });
   });
   document.getElementById('timeslotCount').innerText = `Saved ${timeslots.length} timeslot(s).`;
+  renderSavedTimeslotList();
   toggleGenerateSection();
 }
+
+// Render saved timeslots list with remove buttons
+function renderSavedTimeslotList(){
+  const wrap = document.getElementById('savedTimeslotList');
+  if(!timeslots || timeslots.length===0){ wrap.innerHTML = '<p>No timeslots saved yet.</p>'; return; }
+  let html = '<table><thead><tr><th>Timeslot ID</th><th>Day</th><th>Slot</th><th>Action</th></tr></thead><tbody>';
+  timeslots.forEach((t,idx)=>{
+    html += `<tr id="ts-row-${idx}"><td>${t.id}</td><td>${t.day}</td><td>${t.slot}</td><td><button onclick="removeTimeslot('${t.id}')">Remove</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// Remove a timeslot by id
+function removeTimeslot(id){
+  const confirmDelete = confirm(`Remove timeslot ${id}?`);
+  if(!confirmDelete) return;
+  timeslots = timeslots.filter(t=> t.id !== id);
+  document.getElementById('timeslotCount').innerText = `Saved ${timeslots.length} timeslot(s).`;
+  renderSavedTimeslotList();
+  toggleGenerateSection();
+}
+
+// ---------- Constraints (add/remove) ----------
+function addConstraint(){
+  const txt = document.getElementById('constraintText').value.trim();
+  if(!txt){ alert('Enter a constraint text.'); return; }
+  const id = 'c-'+Date.now();
+  constraints.push({id, text: txt});
+  document.getElementById('constraintText').value = '';
+  renderConstraintList();
+}
+
+function removeConstraint(id){
+  if(!confirm('Remove constraint?')) return;
+  constraints = constraints.filter(c=> c.id !== id);
+  renderConstraintList();
+}
+
+function renderConstraintList(){
+  const wrap = document.getElementById('constraintList');
+  if(constraints.length===0){ wrap.innerHTML = '<p>No constraints added.</p>'; return; }
+  let html = '<table><thead><tr><th>#</th><th>Constraint</th><th>Action</th></tr></thead><tbody>';
+  constraints.forEach((c,idx)=>{
+    html += `<tr id="c-${c.id}"><td>${idx+1}</td><td>${escapeHtml(c.text)}</td><td><button onclick="removeConstraint('${c.id}')">Remove</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// simple escape to prevent accidental HTML injection display issues
+function escapeHtml(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // enable generate section only if prerequisites exist
 function toggleGenerateSection(){
   if(courses.length>0 && rooms.length>0 && timeslots.length>0 && lecturers.length>0){
     document.getElementById('genSection').style.display='block';
+  } else {
+    document.getElementById('genSection').style.display='none';
   }
 }
 
@@ -213,6 +306,28 @@ function fitness(chrom){
     if(roomSched[g.roomId][g.timeslotId] > 1) penalty += 30;
     const room = rooms.find(r=>r.id===g.roomId);
     if(room && g.classSize > room.capacity) penalty += 50;
+    // simple constraint application (basic heuristics)
+    constraints.forEach(ct=>{
+      const text = ct.text.toLowerCase();
+      // example: "no class after 16:00"
+      const m = text.match(/no class after\s+(\d{1,2}:\d{2})/);
+      if(m){
+        const cutoff = m[1];
+        // timeslot format assumed "HH:MM-HH:MM" in slot part
+        const slotPart = g.timeslotId.split('-').slice(1).join('-');
+        const end = slotPart.split('-')[1] || slotPart.split('-')[0];
+        if(end && end.trim() > cutoff) penalty += 40;
+      }
+      // example: "dr x cannot teach on mon"
+      const m2 = text.match(/([a-z0-9\s.]+)\s+cannot teach on\s+(mon|tue|wed|thu|fri)/);
+      if(m2){
+        const nameOrId = m2[1].trim();
+        const day = m2[2].toUpperCase();
+        // check lecturer id or name match
+        const lec = lecturers.find(l=> (l.id.toLowerCase()===nameOrId || l.name.toLowerCase()===nameOrId) );
+        if(lec && g.lecturerId===lec.id && g.timeslotId.startsWith(day)) penalty += 50;
+      }
+    });
   });
   return 1/(1+penalty);
 }
