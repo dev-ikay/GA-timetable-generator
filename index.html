@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>GA Timetable Generator - Departmental (With Delete Feature)</title>
+<title>GA Timetable Generator - Departmental (Patched)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -13,56 +13,78 @@
 
 <div class="section">
   <h2>1. Lecturer Input</h2>
+  <div id="lecturerForm" class="row">
+    <input placeholder="Lecturer ID (e.g. L001)" id="lec-id-0" />
+    <input placeholder="Lecturer Name (e.g. John Doe)" id="lec-name-0" />
+    <select id="lec-title-0">
+      <option>Mr</option><option>Miss</option><option>Mrs</option><option>Dr</option><option>Prof</option><option>Other</option>
+    </select>
+    <input placeholder="If Other, enter title" id="lec-custom-0" style="display:none" />
+    <input placeholder="Unavailable times (comma sep e.g. Mon-08:00-10:00,Tue-10:00-12:00)" id="lec-unavail-0" />
+  </div>
   <div style="margin-top:8px">
     <button onclick="addLecturer()">Add Lecturer</button>
     <button onclick="saveLecturers()">Save All Lecturers</button>
+    <small> (Lecturer ID is used internally; outputs will show lecturer name.)</small>
   </div>
   <div id="lecturerCount"></div>
-  <div id="lecturerList"></div>
-  <button onclick="deleteSelected('lecturer')">Delete Selected Lecturers</button>
 </div>
 
 <div class="section">
   <h2>2. Course Allocation</h2>
+  <div id="courseForm" class="row">
+    <input placeholder="Course Code (optional)" id="course-code-0" />
+    <input placeholder="Course Name" id="course-name-0" />
+    <input type="number" placeholder="Class Size" id="course-size-0" />
+    <input placeholder="Lecturer ID (e.g. L001)" id="course-lec-0" />
+  </div>
   <div style="margin-top:8px">
     <button onclick="addCourse()">Add Course</button>
     <button onclick="createCourseAllocationTable()">Create Course Allocation Table</button>
     <button onclick="continueToTimetable()">Continue to Timetable</button>
   </div>
   <div id="courseTableWrap" class="table-wrap"></div>
-  <div id="courseList"></div>
-  <button onclick="deleteSelected('course')">Delete Selected Courses</button>
 </div>
 
 <div class="section">
   <h2>3. Rooms</h2>
+  <div id="roomForm" class="row">
+    <input placeholder="Room Name (e.g. R101)" id="room-name-0" />
+    <input type="number" placeholder="Capacity" id="room-cap-0" />
+  </div>
   <div style="margin-top:8px">
     <button onclick="addRoom()">Add Room</button>
     <button onclick="saveRooms()">Save Rooms</button>
   </div>
   <div id="roomCount"></div>
-  <div id="roomList"></div>
-  <button onclick="deleteSelected('room')">Delete Selected Rooms</button>
 </div>
 
 <div class="section">
-  <h2>4. Timeslots</h2>
-  <div style="margin-top:8px">
-    <button onclick="addTimeslot()">Add Timeslot</button>
+  <h2>4. Timeslots (select days, then add slots per day)</h2>
+  <div class="row" id="daysRow">
+    <label><input type="checkbox" value="Mon" id="day-Mon"> Mon</label>
+    <label><input type="checkbox" value="Tue" id="day-Tue"> Tue</label>
+    <label><input type="checkbox" value="Wed" id="day-Wed"> Wed</label>
+    <label><input type="checkbox" value="Thu" id="day-Thu"> Thu</label>
+    <label><input type="checkbox" value="Fri" id="day-Fri"> Fri</label>
   </div>
+  <div style="margin-top:8px">
+    <button onclick="enableDaySlots()">Define Slots for Selected Days</button>
+  </div>
+  <div id="timeslotDefs"></div>
   <div id="timeslotCount"></div>
-  <div id="timeslotList"></div>
-  <button onclick="deleteSelected('timeslot')">Delete Selected Timeslots</button>
+  <!-- New: display saved timeslots with option to remove each -->
+  <div id="savedTimeslotList" class="table-wrap" style="margin-top:12px"></div>
 </div>
 
 <div class="section">
   <h2>5. Constraints / Custom Rules</h2>
+  <p>Add constraints that are specific to your department or scheduling rules. These are saved with the project and can be used later by the GA (integration placeholder).</p>
   <div class="row" style="align-items:center">
     <input id="constraintText" placeholder="e.g. No class after 16:00; Dr X cannot teach on Mon" style="width:60%"/>
     <button onclick="addConstraint()">Add Constraint</button>
   </div>
-  <div id="constraintList"></div>
-  <button onclick="deleteSelected('constraint')">Delete Selected Constraints</button>
+  <div id="constraintList" class="table-wrap" style="margin-top:8px"></div>
 </div>
 
 <div class="section" id="genSection" style="display:none">
